@@ -1,5 +1,5 @@
 {
-  "name": "react-native-webview",
+  "name": "react-native-webview-android",
   "description": "React Native WebView component for only Android (supported video full-screen mode) based on react-native-community/react-native-webview",
   "main": "index.js",
   "typings": "typings/index.d.ts",
