@@ -1,21 +1,18 @@
 {
   "name": "react-native-webview",
-  "description": "React Native WebView component for iOS, Android, and Windows 10 (coming soon)",
+  "description": "React Native WebView component for only Android (supported video full-screen mode) based on react-native-community/react-native-webview",
   "main": "index.js",
   "typings": "typings/index.d.ts",
-  "author": "Jamon Holmgren <jamon@infinite.red>",
-  "contributors": [
-    "Thibault Malbranche <malbranche.thibault@gmail.com>"
-  ],
+  "author": "Luke YoungDong Ji <zephyrosjyd@gmail.com>",
   "license": "MIT",
-  "version": "3.1.3",
-  "homepage": "https://github.com/react-native-community/react-native-webview#readme",
+  "version": "3.1.3-1",
+  "homepage": "https://github.com/zephyrosjyd/react-native-webview#readme",
   "scripts": {
     "test:ios:flow": "flow check",
     "test:android:flow": "flow check --flowconfig-name .flowconfig.android",
     "ci:publish": "yarn semantic-release",
     "ci:test": "yarn ci:test:flow",
-    "ci:test:flow": "yarn test:ios:flow && yarn test:android:flow",
+    "ci:test:flow": "yarn test:android:flow",
     "semantic-release": "semantic-release"
   },
   "peerDependencies": {
@@ -36,6 +33,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/react-native-community/react-native-webview.git"
+    "url": "https://github.com/zephyrosjyd/react-native-webview.git"
   }
 }
