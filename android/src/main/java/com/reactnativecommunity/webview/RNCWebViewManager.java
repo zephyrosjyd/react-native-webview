@@ -1,5 +1,7 @@
 package com.reactnativecommunity.webview;
 
+// import com.airship.customwebview.VideoWebChromeClient;
+
 import android.annotation.TargetApi;
 import android.app.DownloadManager;
 import android.content.Context;
@@ -29,6 +31,7 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.widget.FrameLayout;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
@@ -75,6 +78,15 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.facebook.react.ReactRootView;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+import android.graphics.Color;
+import android.app.Activity;
+import android.content.pm.ActivityInfo;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
 
 /**
  * Manages instances of {@link WebView}
@@ -398,7 +410,109 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   protected WebView createViewInstance(ThemedReactContext reactContext) {
     RNCWebView webView = createRNCWebViewInstance(reactContext);
+    // webView.setWebChromeClient(new VideoWebChromeClient(reactContext.getCurrentActivity(), webView, reactContext));
     webView.setWebChromeClient(new WebChromeClient() {
+      private final FrameLayout.LayoutParams FULLSCREEN_LAYOUT_PARAMS = new FrameLayout.LayoutParams(
+          LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT, Gravity.CENTER);
+
+      private WebChromeClient.CustomViewCallback mCustomViewCallback;
+
+      private Activity mActivity = reactContext.getCurrentActivity();
+      private View mWebView = webView;
+      private View mVideoView;
+      private Boolean isVideoFullscreen = false;
+      public Integer nbFois = 0;
+      private ViewGroup.LayoutParams paramsNotFullscreen;
+      private ThemedReactContext mReactContext = reactContext;
+
+      // public VideoWebChromeClient(Activity activity, WebView webView, ThemedReactContext reactContext) {
+      //   mWebView = webView;
+      //   mActivity = activity;
+      //   isVideoFullscreen = false;
+      //   nbFois = 0;
+      //   mReactContext = reactContext;
+      // }
+
+      @Override
+      public void onShowCustomView(View view, CustomViewCallback callback) {
+        if (mVideoView != null) {
+          callback.onCustomViewHidden();
+          return;
+        }
+        WritableMap params = Arguments.createMap();
+
+        sendEvent(mReactContext, "VideoWillEnterFullScreen", params);
+        // Store the view and it's callback for later, so we can dispose of them
+        // correctly
+        mVideoView = view;
+        mCustomViewCallback = callback;
+
+        view.setBackgroundColor(Color.BLACK);
+        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        getRootView().addView(mVideoView, FULLSCREEN_LAYOUT_PARAMS);
+
+        // ((View) mWebView.getRootView()).setVisibility(View.GONE);
+        isVideoFullscreen = true;
+      }
+
+      @Override
+      public void onHideCustomView() {
+        if (mVideoView == null) {
+          return;
+        }
+        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        ((View) mWebView.getRootView()).setVisibility(View.VISIBLE);
+        mVideoView.setVisibility(View.GONE);
+
+        // Remove the custom view from its container.
+        getRootView().removeView(mVideoView);
+        mVideoView = null;
+        mCustomViewCallback.onCustomViewHidden();
+        isVideoFullscreen = false;
+        WritableMap params = Arguments.createMap();
+
+        sendEvent(mReactContext, "VideoNotFullScreenAnymore", params);
+      }
+
+      private void sendEvent(ReactContext reactContext, String eventName, @Nullable WritableMap params) {
+        reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class).emit(eventName, params);
+      }
+
+      private ReactRootView findRootView(View parent) {
+        if (parent == null) {
+          return null;
+        }
+        if (parent instanceof ReactRootView) {
+          return (ReactRootView) parent;
+        }
+        return findRootView((ReactRootView) parent.getParent());
+      }
+
+      private ViewGroup getRootView() {
+        return ((ViewGroup) mActivity.findViewById(android.R.id.content));
+      }
+
+      /**
+       * Notifies the class that the back key has been pressed by the user. This must
+       * be called from the Activity's onBackPressed(), and if it returns false, the
+       * activity itself should handle it. Otherwise don't do anything.
+       * 
+       * @return Returns true if the event was handled, and false if was not (video
+       *         view is not visible)
+       */
+      public boolean onBackPressed() {
+        if (isVideoFullscreen) {
+          onHideCustomView();
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      /**
+       * Original codes from https://github.com/react-native-community/react-native-webview
+       * All methods from here below
+       */
       @Override
       public boolean onConsoleMessage(ConsoleMessage message) {
         if (ReactBuildConfig.DEBUG) {
@@ -409,21 +523,21 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
       }
 
 
-    @Override
-    public void onProgressChanged(WebView webView, int newProgress) {
-        super.onProgressChanged(webView, newProgress);
-        WritableMap event = Arguments.createMap();
-        event.putDouble("target", webView.getId());
-        event.putString("title", webView.getTitle());
-        event.putBoolean("canGoBack", webView.canGoBack());
-        event.putBoolean("canGoForward", webView.canGoForward());
-        event.putDouble("progress", (float)newProgress/100);
-        dispatchEvent(
-                  webView,
-                  new TopLoadingProgressEvent(
-                      webView.getId(),
-                      event));
-    }
+      @Override
+      public void onProgressChanged(WebView webView, int newProgress) {
+          super.onProgressChanged(webView, newProgress);
+          WritableMap event = Arguments.createMap();
+          event.putDouble("target", webView.getId());
+          event.putString("title", webView.getTitle());
+          event.putBoolean("canGoBack", webView.canGoBack());
+          event.putBoolean("canGoForward", webView.canGoForward());
+          event.putDouble("progress", (float)newProgress/100);
+          dispatchEvent(
+                    webView,
+                    new TopLoadingProgressEvent(
+                        webView.getId(),
+                        event));
+      }
 
       @Override
       public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
