@@ -52,3 +52,8 @@ bundles/
 android/gradle
 android/gradlew
 android/gradlew.bat
+
+
+.project
+.classpath
+.settings/
