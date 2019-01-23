@@ -8,5 +8,5 @@ import android.webkit.WebView;
  */
 public interface WebViewConfig {
 
-  void configWebView(WebView webView);
+    void configWebView(WebView webView);
 }
