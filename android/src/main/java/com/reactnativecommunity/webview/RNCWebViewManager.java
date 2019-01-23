@@ -460,8 +460,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         if (mVideoView == null) {
           return;
         }
-        // SCREEN_ORIENTATION_PORTRAIT --> SCREEN_ORIENTATION_SENSOR_PORTRAIT 
-        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+        // SCREEN_ORIENTATION_PORTRAIT --> SCREEN_ORIENTATION_SENSOR
+        mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         ((View) mWebView.getRootView()).setVisibility(View.VISIBLE);
         mVideoView.setVisibility(View.GONE);
 
