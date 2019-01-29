@@ -9,10 +9,12 @@ import android.content.Context;
 import com.facebook.react.uimanager.UIManagerModule;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
@@ -26,11 +28,14 @@ import java.util.Map;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
@@ -176,15 +181,55 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), url));
-            return true;
+            return overrideUrlLoading(view, url);
+//            dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), url));
+//            return true;
         }
 
 
         @TargetApi(Build.VERSION_CODES.N)
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), request.getUrl().toString()));
+            return overrideUrlLoading(view, request.getUrl().toString());
+//            dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), request.getUrl().toString()));
+//            return true;
+        }
+
+        private boolean overrideUrlLoading(WebView view, String url) {
+            Log.d("overrideUrlLoading", url);
+            if (!url.startsWith("https://") && !url.startsWith("http://")) {
+                try {
+                    Context context = view.getContext();
+                    Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+
+                    if (intent != null) {
+                        view.stopLoading();
+
+                        PackageManager packageManager = context.getPackageManager();
+                        ResolveInfo info = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+                        if (info != null) {
+                            context.startActivity(intent);
+                        } else {
+                            Pattern pattern = Pattern.compile("package=(\\w+[.\\w]+)");
+                            Matcher matcher = pattern.matcher(url);
+                            String appPackageName = matcher.find() ? matcher.group(1) : "";
+                            Log.d("appPackageName", appPackageName);
+                            try {
+                                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
+                            } catch (ActivityNotFoundException e) {
+                                Log.w("overrideUrlLoading", appPackageName);
+                                view.loadUrl("https://play.google.com/store/apps/details?id=" + appPackageName);
+                            }
+                        }
+                        return true;
+                    }
+                } catch (URISyntaxException e) {
+                    Log.e("WebView", "Can't resolve URL", e);
+                    e.printStackTrace();
+                }
+            }
+
+            dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), url));
             return true;
         }
 
@@ -470,8 +515,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
                 if (mVideoView == null) {
                     return;
                 }
-                // SCREEN_ORIENTATION_PORTRAIT --> SCREEN_ORIENTATION_SENSOR
-                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+                
+                mActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                 ((View) mWebView.getRootView()).setVisibility(View.VISIBLE);
                 mVideoView.setVisibility(View.GONE);
 
@@ -576,6 +621,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
                 return getModule().startPhotoPickerIntent(filePathCallback, intent, acceptTypes, allowMultiple);
             }
         });
+
         reactContext.addLifecycleEventListener(webView);
         mWebViewConfig.configWebView(webView);
         WebSettings settings = webView.getSettings();
