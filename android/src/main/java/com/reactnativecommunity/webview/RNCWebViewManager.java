@@ -196,7 +196,7 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         }
 
         private boolean overrideUrlLoading(WebView view, String url) {
-            Log.d("overrideUrlLoading", url);
+            Log.d("overrideUrlLoading", "Requested URL = " + url);
             if (!url.startsWith("https://") && !url.startsWith("http://")) {
                 try {
                     Context context = view.getContext();
@@ -213,18 +213,22 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
                             Pattern pattern = Pattern.compile("package=(\\w+[.\\w]+)");
                             Matcher matcher = pattern.matcher(url);
                             String appPackageName = matcher.find() ? matcher.group(1) : "";
-                            Log.d("appPackageName", appPackageName);
-                            try {
-                                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
-                            } catch (ActivityNotFoundException e) {
-                                Log.w("overrideUrlLoading", appPackageName);
-                                view.loadUrl("https://play.google.com/store/apps/details?id=" + appPackageName);
+                            Log.d("overrideUrlLoading", "Extracted appPackageName = " + appPackageName);
+                            if (!appPackageName.isEmpty()) {
+                                try {
+                                    context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + appPackageName)));
+                                } catch (ActivityNotFoundException e) {
+                                    Log.w("overrideUrlLoading", appPackageName);
+                                    view.loadUrl("https://play.google.com/store/apps/details?id=" + appPackageName);
+                                }
+                            } else {
+                                Log.w("overrideUrlLoading", "Can't resolve URL or Scheme: " + url);
                             }
                         }
                         return true;
                     }
                 } catch (URISyntaxException e) {
-                    Log.e("WebView", "Can't resolve URL", e);
+                    Log.e("overrideUrlLoading", "Can't resolve URL", e);
                     e.printStackTrace();
                 }
             }
