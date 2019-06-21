@@ -188,6 +188,8 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         private boolean overrideUrlLoading(WebView view, String url) {
             Log.d("overrideUrlLoading", "Requested URL = " + url);
             if (!url.startsWith("https://") && !url.startsWith("http://")) {
+                if (url.startsWith("naverapp://"))  return false;
+
                 try {
                     Context context = view.getContext();
                     Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
