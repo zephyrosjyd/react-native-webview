@@ -188,26 +188,23 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
         private boolean overrideUrlLoading(WebView view, String url) {
             Log.d("overrideUrlLoading", "Requested URL = " + url);
             if (!url.startsWith("https://") && !url.startsWith("http://")) {
-                if (url.startsWith("naverapp://"))  return false;
-
                 try {
                     Context context = view.getContext();
                     Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
 
                     if (intent != null) {
-                        view.stopLoading();
-
                         PackageManager packageManager = context.getPackageManager();
                         ResolveInfo info = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
                         if (info != null) {
+                            view.stopLoading();
                             context.startActivity(intent);
-                            return false;
                         } else {
                             Pattern pattern = Pattern.compile(PATTERN_TO_EXTRACT_PACKAGE);
                             Matcher matcher = pattern.matcher(url);
                             String appPackageName = matcher.find() ? matcher.group(1) : "";
                             Log.d("overrideUrlLoading", "Extracted appPackageName = " + appPackageName);
                             if (!appPackageName.isEmpty()) {
+                                view.stopLoading();
                                 try {
                                     context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GOOGLE_PLAY_STORE_PREFIX + appPackageName)));
                                 } catch (ActivityNotFoundException e) {
@@ -218,12 +215,13 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
                                 Log.w("overrideUrlLoading", "Can't resolve URL or Scheme: " + url);
                             }
                         }
-                        return true;
                     }
                 } catch (URISyntaxException e) {
                     Log.e("overrideUrlLoading", "Can't resolve URL", e);
                     e.printStackTrace();
                 }
+
+                return false;
             }
 
             dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), url));
