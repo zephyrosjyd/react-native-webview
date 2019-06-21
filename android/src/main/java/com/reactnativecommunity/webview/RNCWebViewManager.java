@@ -206,35 +206,13 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
                     Context context = view.getContext();
                     Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
 
-//                    Log.d("overrideUrlLoading", "=======================================");
-//                    Log.d("overrideUrlLoading", "intent.getPackage() = " + intent.getPackage());
-//                    Log.d("overrideUrlLoading", "intent.getAction() = " + intent.getAction());
-//                    Log.d("overrideUrlLoading", "intent.getData() = " + intent.getData());
-//                    Log.d("overrideUrlLoading", "intent.getScheme() = " + intent.getScheme());
-//                    Log.d("overrideUrlLoading", "=======================================");
-
                     if (intent != null) {
                         view.stopLoading();
 
                         PackageManager packageManager = context.getPackageManager();
                         ResolveInfo info = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
                         if (info != null) {
-//                            final int customUrlStartIndex = url.indexOf(INTENT_PROTOCOL_INTENT) + INTENT_PROTOCOL_INTENT.length();
-//                            final int customUrlStartIndex = INTENT_PROTOCOL_START.length();
-//                            final int customUrlEndIndex = url.indexOf(INTENT_PROTOCOL_INTENT);
-//                            final String customUrl = url.substring(customUrlStartIndex, customUrlEndIndex);
-//                            try {
-//                                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(customUrl)));
-//                            } catch (ActivityNotFoundException e) {
-//                                final int packageStartIndex = customUrlEndIndex + INTENT_PROTOCOL_INTENT.length();
-//                                final int packageEndIndex = url.indexOf(INTENT_PROTOCOL_END);
-//                                final String packageName = url.substring(packageStartIndex, packageEndIndex < 0 ? url.length() : packageEndIndex);
-//                                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(GOOGLE_PLAY_STORE_PREFIX + packageName)));
-//                            }
-//
                             context.startActivity(intent);
-
-                            //dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), url));
                             return false;
                         } else {
                             Pattern pattern = Pattern.compile(PATTERN_TO_EXTRACT_PACKAGE);
@@ -252,7 +230,6 @@ public class RNCWebViewManager extends SimpleViewManager<WebView> {
                                 Log.w("overrideUrlLoading", "Can't resolve URL or Scheme: " + url);
                             }
                         }
-                        //dispatchEvent(view, new TopShouldStartLoadWithRequestEvent(view.getId(), url));
                         return true;
                     }
                 } catch (URISyntaxException e) {
